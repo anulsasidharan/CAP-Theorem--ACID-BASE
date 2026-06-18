@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAP, ACID & BASE Explained</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0f1419;--surface:#1a2332;--surface2:#243044;
+  --border:#334155;--text:#f1f5f9;--muted:#94a3b8;
+  --blue:#60a5fa;--blue-bg:rgba(96,165,250,.12);--blue-border:#3b82f6;
+  --green:#4ade80;--green-bg:rgba(74,222,128,.12);--green-border:#22c55e;
+  --amber:#fbbf24;--amber-bg:rgba(251,191,36,.12);--amber-border:#f59e0b;
+  --red:#f87171;--red-bg:rgba(248,113,113,.12);--red-border:#ef4444;
+  --purple:#a78bfa;--purple-bg:rgba(167,139,250,.12);
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"Cascadia Code","Consolas",monospace;
+  --fs-base:1.125rem;--fs-sm:1rem;--fs-lg:1.375rem;
+  --fs-xl:1.75rem;--fs-2xl:2.25rem;--fs-3xl:2.75rem;
+  --slide-max:1180px;--diagram-max-h:220px;
+}
+html{font-size:18px;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.55;min-height:100vh;}
+.wrap{max-width:var(--slide-max);margin:0 auto;padding:1.5rem 2rem 3rem;}
+header{text-align:center;padding:1.5rem 0 1rem;border-bottom:1px solid var(--border);margin-bottom:1.25rem;}
+header h1{font-size:var(--fs-3xl);font-weight:700;letter-spacing:-.02em;}
+header p{font-size:var(--fs-lg);color:var(--muted);margin-top:.5rem;}
+.nav{display:flex;gap:.5rem;flex-wrap:wrap;padding:1rem 0;position:sticky;top:0;background:var(--bg);z-index:100;border-bottom:1px solid var(--border);}
+.nav-btn{padding:.55rem 1.1rem;border:1px solid var(--border);border-radius:999px;background:transparent;font-size:var(--fs-sm);cursor:pointer;color:var(--muted);font-family:var(--font);transition:all .15s;}
+.nav-btn:hover{background:var(--surface);color:var(--text);}
+.nav-btn.active{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-border);font-weight:600;}
+.section{display:none;animation:fadeIn .25s ease;}
+.section.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.sec-title{font-size:var(--fs-2xl);font-weight:700;margin-bottom:.5rem;}
+.sec-sub{font-size:var(--fs-lg);color:var(--muted);line-height:1.5;margin-bottom:1.25rem;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;}
+.card-grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem;}
+.highlight{border-left:4px solid var(--blue-border);background:var(--blue-bg);padding:1rem 1.25rem;border-radius:0 10px 10px 0;font-size:var(--fs-base);color:var(--blue);margin:1rem 0;line-height:1.6;}
+.warn-box{border-left:4px solid var(--amber-border);background:var(--amber-bg);padding:1rem 1.25rem;border-radius:0 10px 10px 0;font-size:var(--fs-base);color:var(--amber);margin:1rem 0;line-height:1.6;}
+.badge{display:inline-block;padding:.2rem .65rem;border-radius:999px;font-size:.85rem;font-weight:600;}
+.badge-cp{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border);}
+.badge-ap{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+.badge-acid{background:var(--blue-bg);color:var(--blue);}
+.badge-base{background:var(--red-bg);color:var(--red);}
+.tabs,.stabs{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;}
+.tab,.stb{padding:.5rem 1rem;border:1px solid var(--border);border-radius:8px;background:transparent;font-size:var(--fs-sm);cursor:pointer;color:var(--muted);font-family:var(--font);}
+.tab.active,.stb.active{background:var(--surface2);color:var(--text);border-color:var(--blue-border);font-weight:600;}
+.panel,.spnl{display:none;}
+.panel.active,.spnl.active{display:block;}
+.diagram{width:100%;max-height:var(--diagram-max-h);display:block;margin:1rem auto;}
+.diagram-lg{max-height:260px;}
+svg text{font-family:var(--font);}
+svg .th{font-size:13px;font-weight:600;fill:var(--text);}
+svg .ts{font-size:11px;fill:var(--muted);}
+svg .c-blue rect,circle{fill:var(--blue-bg);stroke:var(--blue-border);}
+svg .c-green rect,circle{fill:var(--green-bg);stroke:var(--green-border);}
+svg .c-amber rect,circle{fill:var(--amber-bg);stroke:var(--amber-border);}
+svg .c-red rect,circle{fill:var(--red-bg);stroke:var(--red-border);}
+svg .c-gray rect,circle{fill:var(--surface2);stroke:var(--border);}
+svg .c-teal rect,circle{fill:rgba(45,212,191,.12);stroke:#2dd4bf;}
+svg .c-purple rect,circle{fill:var(--purple-bg);stroke:var(--purple);}
+svg .c-coral rect,circle{fill:var(--red-bg);stroke:var(--red-border);}
+.pillar{border-radius:12px;padding:1.25rem 1.5rem;border:1px solid;}
+.pillar-c{background:var(--blue-bg);border-color:var(--blue-border);}
+.pillar-a{background:var(--green-bg);border-color:var(--green-border);}
+.pillar-p{background:var(--amber-bg);border-color:var(--amber-border);}
+.pillar-title{font-size:var(--fs-lg);font-weight:700;margin-bottom:.4rem;}
+.pillar-desc{font-size:var(--fs-base);line-height:1.55;}
+.pillar-ex{font-size:var(--fs-sm);margin-top:.75rem;padding:.5rem .75rem;border-radius:8px;font-style:italic;opacity:.9;}
+.prop-card{border-radius:12px;padding:1.25rem;border:1px solid var(--border);background:var(--surface2);}
+.prop-letter{font-size:2.5rem;font-weight:700;line-height:1;margin-bottom:.35rem;}
+.prop-word{font-size:var(--fs-lg);font-weight:600;margin-bottom:.4rem;}
+.prop-desc{font-size:var(--fs-base);color:var(--muted);line-height:1.55;margin-bottom:.6rem;}
+.prop-ex{font-size:var(--fs-sm);padding:.65rem .85rem;border-radius:8px;background:var(--surface);border:1px solid var(--border);font-style:italic;color:var(--muted);line-height:1.5;}
+.tbl{width:100%;border-collapse:collapse;font-size:var(--fs-base);}
+.tbl th{padding:.75rem 1rem;text-align:left;font-size:.85rem;font-weight:600;color:var(--muted);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.04em;}
+.tbl td{padding:.75rem 1rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:var(--surface2);}
+.yes{color:var(--green);font-weight:600;}
+.no{color:var(--red);font-weight:600;}
+.muted{color:var(--muted);font-size:var(--fs-sm);}
+.snode{flex:1;min-width:150px;border-radius:12px;padding:1rem;border:1px solid var(--border);background:var(--surface);text-align:center;transition:all .3s;}
+.snode.dirty{border-color:var(--amber-border);background:var(--amber-bg);}
+.snode.ok{border-color:var(--green-border);background:var(--green-bg);}
+.snode.bad{border-color:var(--red-border);background:var(--red-bg);}
+.snode-lbl{font-size:var(--fs-sm);color:var(--muted);margin-bottom:.35rem;}
+.snode-val{font-size:var(--fs-xl);font-weight:700;}
+.snode-st{font-size:var(--fs-sm);color:var(--muted);margin-top:.25rem;}
+.sim-row{display:flex;gap:.75rem;align-items:stretch;flex-wrap:wrap;margin-bottom:.75rem;}
+.sim-btn{padding:.55rem 1.1rem;border:1px solid var(--border);border-radius:8px;background:transparent;font-size:var(--fs-sm);cursor:pointer;color:var(--muted);font-family:var(--font);}
+.sim-btn:hover{background:var(--surface2);}
+.sim-btn.ok{border-color:var(--green-border);color:var(--green);}
+.sim-btn.danger{border-color:var(--red-border);color:var(--red);}
+.logbox{background:var(--surface2);border-radius:10px;padding:.85rem 1rem;font-size:var(--fs-sm);font-family:var(--mono);height:110px;overflow-y:auto;line-height:1.7;margin-top:.75rem;}
+.lok{color:var(--green);}.lwrn{color:var(--amber);}.lerr{color:var(--red);}.lnfo{color:var(--blue);}
+.node-box{border-radius:12px;padding:1.1rem;border:1px solid var(--border);background:var(--surface);text-align:center;transition:all .3s;}
+.node-box.healthy{border-color:var(--green-border);background:var(--green-bg);}
+.node-box.partitioned{border-color:var(--red-border);background:var(--red-bg);}
+.node-box.stale{border-color:var(--amber-border);background:var(--amber-bg);}
+.node-title{font-size:var(--fs-base);font-weight:600;}
+.node-val{font-size:var(--fs-xl);font-weight:700;margin:.4rem 0;}
+.demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.flow{display:flex;align-items:center;flex-wrap:wrap;gap:.35rem;margin:1rem 0;}
+.fbox{padding:.65rem 1rem;border-radius:8px;border:1px solid var(--border);background:var(--surface2);font-size:var(--fs-sm);text-align:center;min-width:90px;}
+.fbox.info{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue);}
+.fbox.success{background:var(--green-bg);border-color:var(--green-border);color:var(--green);}
+.fbox.danger{background:var(--red-bg);border-color:var(--red-border);color:var(--red);}
+.fbox.warning{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber);}
+.farrow{color:var(--muted);font-size:var(--fs-lg);}
+.spectrum{position:relative;height:52px;background:var(--surface2);border-radius:10px;margin:1rem 0;display:flex;align-items:center;border:1px solid var(--border);}
+.spectrum-fill{position:absolute;inset:0;border-radius:10px;background:linear-gradient(to right,var(--blue-bg),var(--red-bg));opacity:.5;}
+.sp-l{position:absolute;left:1rem;font-size:var(--fs-sm);font-weight:600;color:var(--blue);}
+.sp-r{position:absolute;right:1rem;font-size:var(--fs-sm);font-weight:600;color:var(--red);}
+.db-row{display:flex;gap:.5rem;flex-wrap:wrap;margin:.75rem 0;}
+.db-pill{padding:.4rem .85rem;border-radius:8px;font-size:var(--fs-sm);font-weight:600;border:1px solid;}
+@media(max-width:768px){html{font-size:16px;}.wrap{padding:1rem;}.demo-grid{grid-template-columns:1fr;}}
+@media print{.nav{position:static;}.section{display:block!important;page-break-inside:avoid;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>CAP, ACID & BASE Explained</h1>
+  <p>Distributed systems trade-offs — theory, databases, and real-world examples</p>
+</header>
+
+<nav class="nav" id="mainNav">
+  <button class="nav-btn active" data-sec="cap">CAP Basics</button>
+  <button class="nav-btn" data-sec="overview">ACID vs BASE</button>
+  <button class="nav-btn" data-sec="acid">ACID</button>
+  <button class="nav-btn" data-sec="base">BASE</button>
+  <button class="nav-btn" data-sec="iso">Isolation</button>
+  <button class="nav-btn" data-sec="txsim">TX Simulator</button>
+  <button class="nav-btn" data-sec="caplink">CAP Link</button>
+  <button class="nav-btn" data-sec="banking">Banking</button>
+  <button class="nav-btn" data-sec="amazon">Amazon</button>
+  <button class="nav-btn" data-sec="irctc">IRCTC</button>
+  <button class="nav-btn" data-sec="partsim">Partition Sim</button>
+  <button class="nav-btn" data-sec="matrix">Matrix</button>
+</nav>
+
+<!-- ═══ CAP BASICS ═══ -->
+<section class="section active" id="sec-cap">
+  <div class="sec-title">The CAP Theorem</div>
+  <div class="sec-sub">A distributed system can guarantee only <strong>2 of 3</strong> properties at once. Partitions always happen — so you choose CP or AP.</div>
+  <div class="card-grid" style="margin-bottom:1rem;">
+    <div class="pillar pillar-c"><div class="pillar-title" style="color:var(--blue)">Consistency</div><div class="pillar-desc" style="color:var(--muted)">Every read gets the latest write or an error. All nodes see the same data.</div><div class="pillar-ex" style="background:var(--surface)">Every ATM shows your real balance — no stale data.</div></div>
+    <div class="pillar pillar-a"><div class="pillar-title" style="color:var(--green)">Availability</div><div class="pillar-desc" style="color:var(--muted)">Every request gets a response (may be stale). The system stays up.</div><div class="pillar-ex" style="background:var(--surface)">Amazon cart always lets you add items, even during a network split.</div></div>
+    <div class="pillar pillar-p"><div class="pillar-title" style="color:var(--amber)">Partition Tolerance</div><div class="pillar-desc" style="color:var(--muted)">System keeps running when messages are lost between nodes.</div><div class="pillar-ex" style="background:var(--surface)">Packets dropped between data centers — system still runs.</div></div>
+  </div>
+  <div class="highlight"><strong>Key insight:</strong> In real distributed systems, network partitions always happen. The real choice: during a partition, prioritize <strong>Consistency (CP)</strong> or <strong>Availability (AP)</strong>?</div>
+  <svg class="diagram diagram-lg" viewBox="0 0 680 280" role="img"><title>CAP triangle</title>
+    <polygon points="340,35 90,245 590,245" fill="none" stroke="var(--border)" stroke-width="1.5"/>
+    <g class="c-blue"><circle cx="340" cy="35" r="42" stroke-width="1"/><text class="th" x="340" y="30" text-anchor="middle">Consistency</text><text class="ts" x="340" y="48" text-anchor="middle">Strong reads</text></g>
+    <g class="c-green"><circle cx="90" cy="245" r="42" stroke-width="1"/><text class="th" x="90" y="240" text-anchor="middle">Availability</text><text class="ts" x="90" y="258" text-anchor="middle">Always responds</text></g>
+    <g class="c-amber"><circle cx="590" cy="245" r="42" stroke-width="1"/><text class="th" x="590" y="240" text-anchor="middle">Partition</text><text class="ts" x="590" y="258" text-anchor="middle">Tolerant</text></g>
+    <rect x="175" y="115" width="72" height="26" rx="6" fill="var(--blue-bg)" stroke="var(--blue-border)"/><text class="ts" x="211" y="130" text-anchor="middle" fill="var(--blue)">CP Systems</text>
+    <rect x="433" y="115" width="72" height="26" rx="6" fill="var(--green-bg)" stroke="var(--green-border)"/><text class="ts" x="469" y="130" text-anchor="middle" fill="var(--green)">AP Systems</text>
+    <rect x="304" y="255" width="72" height="22" rx="6" fill="var(--red-bg)" stroke="var(--red-border)"/><text class="ts" x="340" y="268" text-anchor="middle" fill="var(--red)">CA — avoid</text>
+    <text class="ts" x="340" y="168" text-anchor="middle">Pick 2 of 3</text>
+  </svg>
+</section>
+
+<!-- ═══ OVERVIEW ═══ -->
+<section class="section" id="sec-overview">
+  <div class="sec-title">ACID vs BASE — Two Philosophies</div>
+  <div class="sec-sub">ACID = strict correctness (CP world). BASE = high availability (AP world). Neither is universally better — they serve different needs.</div>
+  <div class="spectrum"><div class="spectrum-fill"></div><span class="sp-l">← ACID Strong</span><span class="sp-r">BASE Eventual →</span></div>
+  <svg class="diagram" viewBox="0 0 680 240" role="img"><title>Consistency spectrum</title>
+    <line x1="50" y1="90" x2="630" y2="90" stroke="var(--border)" stroke-width="1.5" marker-end="url(#arr0)"/>
+    <defs><marker id="arr0" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="var(--muted)" stroke-width="1.5"/></marker></defs>
+    <g class="c-blue"><rect x="35" y="65" width="95" height="38" rx="8"/><text class="th" x="82" y="82" text-anchor="middle">ACID</text><text class="ts" x="82" y="96" text-anchor="middle">Strong</text></g>
+    <g class="c-red"><rect x="550" y="65" width="95" height="38" rx="8"/><text class="th" x="597" y="82" text-anchor="middle">BASE</text><text class="ts" x="597" y="96" text-anchor="middle">Eventual</text></g>
+    <g class="c-blue"><rect x="50" y="140" width="120" height="44" rx="8"/><text class="th" x="110" y="158" text-anchor="middle">PostgreSQL</text><text class="ts" x="110" y="174" text-anchor="middle">Banking</text></g>
+    <g class="c-teal"><rect x="195" y="140" width="110" height="44" rx="8"/><text class="th" x="250" y="158" text-anchor="middle">MySQL</text><text class="ts" x="250" y="174" text-anchor="middle">E-commerce</text></g>
+    <g class="c-amber"><rect x="330" y="140" width="110" height="44" rx="8"/><text class="th" x="385" y="158" text-anchor="middle">MongoDB</text><text class="ts" x="385" y="174" text-anchor="middle">Hybrid</text></g>
+    <g class="c-red"><rect x="465" y="140" width="120" height="44" rx="8"/><text class="th" x="525" y="158" text-anchor="middle">Cassandra</text><text class="ts" x="525" y="174" text-anchor="middle">Social, IoT</text></g>
+    <line x1="110" y1="138" x2="110" y2="103" stroke="var(--border)" stroke-dasharray="3 3"/>
+    <line x1="250" y1="138" x2="250" y2="103" stroke="var(--border)" stroke-dasharray="3 3"/>
+    <line x1="385" y1="138" x2="385" y2="103" stroke="var(--border)" stroke-dasharray="3 3"/>
+    <line x1="525" y1="138" x2="525" y2="103" stroke="var(--border)" stroke-dasharray="3 3"/>
+    <text class="ts" x="110" y="210" text-anchor="middle" fill="var(--blue)">CP systems</text>
+    <text class="ts" x="525" y="210" text-anchor="middle" fill="var(--red)">AP systems</text>
+  </svg>
+  <div class="card-grid-2" style="margin-top:1rem;">
+    <div class="card"><div style="font-size:var(--fs-lg);font-weight:600;margin-bottom:.6rem;">ACID at a glance</div>
+      <div style="font-size:var(--fs-base);line-height:2;color:var(--muted);">
+        <span style="font-weight:600;color:var(--blue)">A</span>tomicity — all or nothing<br>
+        <span style="font-weight:600;color:var(--green)">C</span>onsistency — valid state always<br>
+        <span style="font-weight:600;color:var(--amber)">I</span>solation — no interference<br>
+        <span style="font-weight:600;color:var(--text)">D</span>urability — survives crashes
+      </div>
+      <div style="margin-top:.75rem;display:flex;gap:.4rem;flex-wrap:wrap;"><span class="badge badge-acid">PostgreSQL</span><span class="badge badge-acid">Oracle</span><span class="badge badge-acid">MySQL</span></div>
+    </div>
+    <div class="card"><div style="font-size:var(--fs-lg);font-weight:600;margin-bottom:.6rem;">BASE at a glance</div>
+      <div style="font-size:var(--fs-base);line-height:2;color:var(--muted);">
+        <span style="font-weight:600;color:var(--red)">BA</span>sically Available — always responds<br>
+        <span style="font-weight:600;color:var(--green)">S</span>oft state — nodes may diverge<br>
+        <span style="font-weight:600;color:var(--amber)">E</span>ventually consistent — converges
+      </div>
+      <div style="margin-top:.75rem;display:flex;gap:.4rem;flex-wrap:wrap;"><span class="badge badge-base">Cassandra</span><span class="badge badge-base">DynamoDB</span><span class="badge badge-base">CouchDB</span></div>
+    </div>
+  </div>
+  <div class="highlight">BASE was coined as the chemical opposite of ACID — Eric Brewer used it for highly available distributed systems.</div>
+</section>
+
+<!-- ═══ ACID ═══ -->
+<section class="section" id="sec-acid">
+  <div class="sec-title">ACID — Every Property in Depth</div>
+  <div class="sec-sub">Each letter solves a specific failure mode. Together they guarantee correct, predictable state under concurrent transactions.</div>
+  <div class="card-grid">
+    <div class="prop-card"><div class="prop-letter" style="color:var(--blue)">A</div><div class="prop-word">Atomicity</div><div class="prop-desc">All-or-nothing. Every operation succeeds or the entire transaction rolls back — zero partial writes.</div><div class="prop-ex">Banking: debit ₹5,000 from A AND credit ₹5,000 to B — both succeed or neither. No half-transfers.</div><div style="margin-top:.5rem;display:flex;gap:.35rem;flex-wrap:wrap;"><span class="badge badge-acid">BEGIN/COMMIT/ROLLBACK</span><span class="badge badge-cp">WAL log</span></div></div>
+    <div class="prop-card"><div class="prop-letter" style="color:var(--green)">C</div><div class="prop-word">Consistency</div><div class="prop-desc">Every transaction moves DB from one valid state to another. Constraints, cascades, triggers satisfied.</div><div class="prop-ex">Balance cannot go below zero — any violating CHECK constraint is rejected entirely.</div><div style="margin-top:.5rem;display:flex;gap:.35rem;flex-wrap:wrap;"><span class="badge badge-acid">CHECK constraints</span><span class="badge badge-cp">FK constraints</span></div></div>
+    <div class="prop-card"><div class="prop-letter" style="color:var(--amber)">I</div><div class="prop-word">Isolation</div><div class="prop-desc">Concurrent transactions run as if serial. Intermediate state invisible until commit. Level is configurable.</div><div class="prop-ex">Two users booking the last IRCTC seat: only one acquires the row lock — the other is blocked or errors.</div><div style="margin-top:.5rem;display:flex;gap:.35rem;flex-wrap:wrap;"><span class="badge badge-acid">MVCC</span><span class="badge badge-cp">Row-level locks</span></div></div>
+    <div class="prop-card"><div class="prop-letter" style="color:var(--muted)">D</div><div class="prop-word">Durability</div><div class="prop-desc">Once committed, data survives crashes. DB flushes to disk via fsync before acknowledging commit.</div><div class="prop-ex">NEFT "Success" — a server crash 1 second later cannot undo it. WAL redo log has it on disk.</div><div style="margin-top:.5rem;display:flex;gap:.35rem;flex-wrap:wrap;"><span class="badge badge-cp">WAL / redo log</span><span class="badge badge-cp">fsync</span></div></div>
+  </div>
+  <div class="sec-title" style="margin-top:1.5rem;font-size:var(--fs-xl);">Atomicity — Rollback Mechanism</div>
+  <div class="flow">
+    <div class="fbox"><strong>BEGIN TX</strong><br><small>Write WAL</small></div><span class="farrow">→</span>
+    <div class="fbox info"><strong>Debit A</strong></div><span class="farrow">→</span>
+    <div class="fbox info"><strong>Credit B</strong></div><span class="farrow">→</span>
+    <div class="fbox info"><strong>Validate</strong></div><span class="farrow">→</span>
+    <div style="display:flex;flex-direction:column;gap:.4rem;">
+      <div class="fbox success"><strong>COMMIT</strong><br><small>fsync to disk</small></div>
+      <div class="fbox danger"><strong>ROLLBACK</strong><br><small>Undo via WAL</small></div>
+    </div>
+  </div>
+  <div class="warn-box">The "C" in ACID is partly the developer's job — the DB enforces constraints you define, but business-logic consistency is your application code's responsibility.</div>
+</section>
+
+<!-- ═══ BASE ═══ -->
+<section class="section" id="sec-base">
+  <div class="sec-title">BASE — Every Property in Depth</div>
+  <div class="sec-sub">BASE trades strong consistency for availability. Nodes fail, networks split — data will eventually converge.</div>
+  <div class="card-grid">
+    <div class="prop-card"><div class="prop-letter" style="color:var(--red)">BA</div><div class="prop-word">Basically Available</div><div class="prop-desc">Every request gets a response — not always latest data, but never a total outage.</div><div class="prop-ex">DynamoDB: during regional outage, other regions still serve reads/writes. Cart may be stale — site never fully down.</div><div style="margin-top:.5rem;display:flex;gap:.35rem;flex-wrap:wrap;"><span class="badge badge-base">Multi-region replicas</span></div></div>
+    <div class="prop-card"><div class="prop-letter" style="color:var(--green)">S</div><div class="prop-word">Soft State</div><div class="prop-desc">State may change without new input. Replicas propagate asynchronously — nodes can temporarily differ.</div><div class="prop-ex">Mumbai node shows ₹999; Delhi node (not synced) shows ₹1,099 — both valid at their moment in time.</div><div style="margin-top:.5rem;display:flex;gap:.35rem;flex-wrap:wrap;"><span class="badge badge-base">Async replication</span><span class="badge badge-base">Gossip protocol</span></div></div>
+    <div class="prop-card"><div class="prop-letter" style="color:var(--amber)">E</div><div class="prop-word">Eventually Consistent</div><div class="prop-desc">Under no new writes, all replicas converge. Window is typically milliseconds to seconds.</div><div class="prop-ex">Tweet likes: User A sees 1,203; User B sees 1,201. In 300ms both sync to the same count.</div><div style="margin-top:.5rem;display:flex;gap:.35rem;flex-wrap:wrap;"><span class="badge badge-base">Vector clocks</span><span class="badge badge-base">CRDTs</span><span class="badge badge-base">Read repair</span></div></div>
+  </div>
+  <div class="sec-title" style="margin-top:1.5rem;font-size:var(--fs-xl);">Replication Lag Timeline</div>
+  <svg class="diagram" viewBox="0 0 680 220" role="img"><title>Eventual consistency timeline</title>
+    <text class="ts" x="30" y="45">Node A</text><text class="ts" x="30" y="145">Node B</text>
+    <line x1="85" y1="52" x2="620" y2="52" stroke="var(--border)"/><line x1="85" y1="152" x2="620" y2="152" stroke="var(--border)"/>
+    <g class="c-blue"><rect x="85" y="36" width="95" height="30" rx="6"/><text class="ts" x="132" y="52" text-anchor="middle">Write ₹999</text></g>
+    <g class="c-blue"><rect x="240" y="36" width="65" height="30" rx="6"/><text class="ts" x="272" y="52" text-anchor="middle">Read 999</text></g>
+    <g class="c-amber"><rect x="85" y="136" width="75" height="30" rx="6"/><text class="ts" x="122" y="152" text-anchor="middle">Read 1099</text></g>
+    <g class="c-amber"><rect x="240" y="136" width="75" height="30" rx="6"/><text class="ts" x="277" y="152" text-anchor="middle">Read 1099</text></g>
+    <path d="M180 52 L370 152" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arr1)"/>
+    <defs><marker id="arr1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="var(--green)" stroke-width="1.5"/></marker></defs>
+    <text class="ts" x="280" y="100" text-anchor="middle" fill="var(--green)">async replication ~300ms</text>
+    <g class="c-green"><rect x="370" y="136" width="75" height="30" rx="6"/><text class="ts" x="407" y="152" text-anchor="middle">Read 999 ✓</text></g>
+    <g class="c-green"><rect x="480" y="136" width="75" height="30" rx="6"/><text class="ts" x="517" y="152" text-anchor="middle">Read 999 ✓</text></g>
+    <text class="ts" x="132" y="195" text-anchor="middle">t=0</text><text class="ts" x="277" y="195" text-anchor="middle" fill="var(--amber)">t=100ms stale</text><text class="ts" x="407" y="195" text-anchor="middle" fill="var(--green)">t=300ms synced</text>
+  </svg>
+  <div class="highlight">Eventually consistent ≠ wrong forever. Fine for catalogs, feeds, analytics. Never for bank balances or ticket booking.</div>
+</section>
+
+<!-- ═══ ISOLATION ═══ -->
+<section class="section" id="sec-iso">
+  <div class="sec-title">Isolation Levels — The "I" in ACID</div>
+  <div class="sec-sub">Four SQL levels trading performance for protection against read anomalies. Higher isolation = stronger guarantees, more locking.</div>
+  <div class="stabs">
+    <button class="stb active" data-grp="iso" data-panel="levels">Four levels</button>
+    <button class="stb" data-grp="iso" data-panel="anom">Read anomalies</button>
+    <button class="stb" data-grp="iso" data-panel="irctc">IRCTC example</button>
+  </div>
+  <div class="spnl active" id="iso-levels">
+    <div class="card" style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Level</th><th>Dirty read</th><th>Non-repeatable</th><th>Phantom</th><th>Performance</th><th>Default in</th></tr></thead>
+    <tbody>
+      <tr><td style="font-weight:600">READ UNCOMMITTED</td><td class="no">Possible</td><td class="no">Possible</td><td class="no">Possible</td><td class="muted">Fastest</td><td class="muted">Analytics</td></tr>
+      <tr><td style="font-weight:600">READ COMMITTED</td><td class="yes">Prevented</td><td class="no">Possible</td><td class="no">Possible</td><td class="muted">Fast</td><td class="muted">PostgreSQL</td></tr>
+      <tr><td style="font-weight:600">REPEATABLE READ</td><td class="yes">Prevented</td><td class="yes">Prevented</td><td class="no">Possible</td><td class="muted">Moderate</td><td class="muted">MySQL</td></tr>
+      <tr><td style="font-weight:600">SERIALIZABLE</td><td class="yes">Prevented</td><td class="yes">Prevented</td><td class="yes">Prevented</td><td class="muted">Slowest</td><td class="muted">IRCTC, finance</td></tr>
+    </tbody></table></div>
+  </div>
+  <div class="spnl" id="iso-anom">
+    <div class="card-grid">
+      <div class="card"><div style="font-weight:600;font-size:var(--fs-base);margin-bottom:.5rem;">Dirty read</div><div class="muted" style="font-size:var(--fs-base);line-height:1.6;">TX1 reads uncommitted data from TX2. If TX2 rolls back, TX1 read data that never existed.<br><br><em style="color:var(--amber)">You see ₹50,000 credited before TX commits — then it rolls back.</em></div></div>
+      <div class="card"><div style="font-weight:600;font-size:var(--fs-base);margin-bottom:.5rem;">Non-repeatable read</div><div class="muted" style="font-size:var(--fs-base);line-height:1.6;">TX1 reads a row, TX2 modifies and commits, TX1 re-reads and gets a different value.<br><br><em style="color:var(--amber)">Balance report reads ₹10,000 then ₹5,000 in one transaction.</em></div></div>
+      <div class="card"><div style="font-weight:600;font-size:var(--fs-base);margin-bottom:.5rem;">Phantom read</div><div class="muted" style="font-size:var(--fs-base);line-height:1.6;">TX1 runs range query, TX2 inserts matching rows, TX1 re-runs and sees phantom rows.<br><br><em style="color:var(--amber)">IRCTC queries seats → 3. Another TX books one. Re-query returns 2.</em></div></div>
+    </div>
+  </div>
+  <div class="spnl" id="iso-irctc">
+    <svg class="diagram diagram-lg" viewBox="0 0 680 250" role="img"><title>IRCTC serializable isolation</title>
+      <text class="ts" x="80" y="32" text-anchor="middle">TX1 — User A</text><text class="ts" x="480" y="32" text-anchor="middle">TX2 — User B</text>
+      <line x1="80" y1="42" x2="80" y2="230" stroke="var(--border)"/><line x1="480" y1="42" x2="480" y2="230" stroke="var(--border)"/>
+      <g class="c-blue"><rect x="105" y="48" width="200" height="34" rx="6"/><text class="ts" x="205" y="66" text-anchor="middle">SELECT seats → 1 found</text></g>
+      <g class="c-amber"><rect x="375" y="78" width="200" height="34" rx="6"/><text class="ts" x="475" y="96" text-anchor="middle">SELECT seats → 1 found</text></g>
+      <g class="c-blue"><rect x="105" y="128" width="200" height="34" rx="6"/><text class="ts" x="205" y="146" text-anchor="middle">UPDATE seat — LOCK acquired</text></g>
+      <g class="c-gray"><rect x="375" y="128" width="200" height="34" rx="6"/><text class="ts" x="475" y="146" text-anchor="middle">BLOCKED — waiting for lock</text></g>
+      <g class="c-green"><rect x="105" y="188" width="200" height="34" rx="6"/><text class="ts" x="205" y="206" text-anchor="middle">COMMIT — seat booked ✓</text></g>
+      <g class="c-red"><rect x="375" y="188" width="200" height="34" rx="6"/><text class="ts" x="475" y="206" text-anchor="middle">ERROR — no seats available</text></g>
+    </svg>
+    <div class="muted" style="margin-top:.5rem;font-size:var(--fs-base);">SERIALIZABLE ensures TX2 cannot hold a stale snapshot once TX1 commits. No double booking.</div>
+  </div>
+</section>
+
+<!-- ═══ TX SIMULATOR ═══ -->
+<section class="section" id="sec-txsim">
+  <div class="sec-title">Transaction Simulator — ACID vs BASE</div>
+  <div class="sec-sub">Run a ₹2,000 transfer then crash mid-way. ACID rolls back cleanly; BASE leaves the database broken.</div>
+  <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.5rem;">
+    <span style="font-weight:600;font-size:var(--fs-base);">Mode:</span>
+    <button class="sim-btn ok" id="btn-acid" data-mode="acid">ACID (PostgreSQL)</button>
+    <button class="sim-btn" id="btn-base" data-mode="base">BASE (Cassandra)</button>
+  </div>
+  <div id="mlbl" style="font-size:var(--fs-base);color:var(--muted);margin-bottom:1rem;">Mode: <strong style="color:var(--green)">ACID — full rollback on crash</strong></div>
+  <div class="sim-row">
+    <div class="snode" id="na"><div class="snode-lbl">Account A</div><div class="snode-val" id="va">₹10,000</div><div class="snode-st" id="sa">Ready</div></div>
+    <span class="farrow">→</span>
+    <div class="snode" id="nb"><div class="snode-lbl">Account B</div><div class="snode-val" id="vb">₹5,000</div><div class="snode-st" id="sb">Ready</div></div>
+    <span class="farrow">→</span>
+    <div class="snode" id="nl"><div class="snode-lbl">Ledger</div><div class="snode-val" id="vl">OK</div><div class="snode-st" id="sl">Sum = ₹15,000</div></div>
+  </div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+    <button class="sim-btn ok" id="doTx">Transfer ₹2,000</button>
+    <button class="sim-btn danger" id="doCrash">Transfer + crash</button>
+    <button class="sim-btn" id="doReset">Reset</button>
+  </div>
+  <div class="logbox" id="lg"><div class="lok">[ready] Initialized. Mode: ACID.</div></div>
+</section>
+
+<!-- ═══ CAP LINK ═══ -->
+<section class="section" id="sec-caplink">
+  <div class="sec-title">How ACID + BASE Connect to CAP</div>
+  <div class="sec-sub">ACID and BASE are database-level implementations of the CAP trade-off. ACID = CP. BASE = AP. They are consequences of your CAP choice.</div>
+  <svg class="diagram diagram-lg" viewBox="0 0 680 280" role="img"><title>CAP to ACID/BASE</title>
+    <g class="c-gray"><rect x="215" y="15" width="250" height="48" rx="10"/><text class="th" x="340" y="35" text-anchor="middle">CAP theorem</text><text class="ts" x="340" y="52" text-anchor="middle">Partition happens — pick 2</text></g>
+    <g class="c-blue"><rect x="60" y="110" width="200" height="48" rx="10"/><text class="th" x="160" y="130" text-anchor="middle">CP — consistency</text><text class="ts" x="160" y="147" text-anchor="middle">Sacrifice availability</text></g>
+    <g class="c-green"><rect x="420" y="110" width="200" height="48" rx="10"/><text class="th" x="520" y="130" text-anchor="middle">AP — availability</text><text class="ts" x="520" y="147" text-anchor="middle">Sacrifice consistency</text></g>
+    <path d="M340 63 L160 108" fill="none" stroke="var(--border)" marker-end="url(#arr2)"/><path d="M340 63 L520 108" fill="none" stroke="var(--border)" marker-end="url(#arr2)"/>
+    <defs><marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="var(--muted)" stroke-width="1.5"/></marker></defs>
+    <g class="c-blue"><rect x="30" y="210" width="250" height="52" rx="10"/><text class="th" x="155" y="232" text-anchor="middle">ACID properties</text><text class="ts" x="155" y="250" text-anchor="middle">Atomicity · Consistency · Isolation · Durability</text></g>
+    <g class="c-red"><rect x="400" y="210" width="250" height="52" rx="10"/><text class="th" x="525" y="232" text-anchor="middle">BASE properties</text><text class="ts" x="525" y="250" text-anchor="middle">Basically Available · Soft state · Eventual</text></g>
+    <path d="M160 158 L155 208" fill="none" stroke="var(--blue)" marker-end="url(#arr2)"/><path d="M520 158 L525 208" fill="none" stroke="var(--green)" marker-end="url(#arr2)"/>
+  </svg>
+  <div class="card-grid-2" style="margin-top:1rem;">
+    <div class="card"><div style="font-weight:600;font-size:var(--fs-base);margin-bottom:.5rem;">CP + ACID = banking</div><div class="muted" style="font-size:var(--fs-base);line-height:1.6;">During partition: block writes, return error. No dirty reads, rollback on crash, fsync durability.</div><div style="margin-top:.5rem;display:flex;gap:.35rem;flex-wrap:wrap;"><span class="badge badge-cp">PostgreSQL</span><span class="badge badge-cp">Oracle</span><span class="badge badge-cp">MySQL</span></div></div>
+    <div class="card"><div style="font-weight:600;font-size:var(--fs-base);margin-bottom:.5rem;">AP + BASE = e-commerce / social</div><div class="muted" style="font-size:var(--fs-base);line-height:1.6;">During partition: accept writes locally, replicate later. Eventual sync, vector clocks for conflicts.</div><div style="margin-top:.5rem;display:flex;gap:.35rem;flex-wrap:wrap;"><span class="badge badge-ap">Cassandra</span><span class="badge badge-ap">DynamoDB</span><span class="badge badge-ap">CouchDB</span></div></div>
+  </div>
+  <div class="highlight">NewSQL (CockroachDB, Spanner, YugabyteDB) achieves distributed ACID via Raft/Paxos — CP with very high practical availability.</div>
+</section>
+
+<!-- ═══ BANKING ═══ -->
+<section class="section" id="sec-banking">
+  <div class="sec-title">Banking — CP (Consistency + Partition Tolerance)</div>
+  <div class="sec-sub">Banks sacrifice availability for consistency. A failed transaction beats double-spending ₹50,000. ACID, 2PC, synchronous replication.</div>
+  <div class="tabs">
+    <button class="tab active" data-sys="banking" data-panel="arch">Architecture</button>
+    <button class="tab" data-sys="banking" data-panel="flow">Transfer flow</button>
+    <button class="tab" data-sys="banking" data-panel="partition">During partition</button>
+  </div>
+  <div class="panel active" id="banking-arch">
+    <div class="muted" style="margin-bottom:.5rem;font-size:var(--fs-sm);">CP — synchronous replication, strict ACID</div>
+    <svg class="diagram diagram-lg" viewBox="0 0 680 300" role="img"><title>Banking CP architecture</title>
+      <g class="c-gray"><rect x="30" y="120" width="100" height="50" rx="8"/><text class="th" x="80" y="140" text-anchor="middle">ATM / App</text><text class="ts" x="80" y="158" text-anchor="middle">Client</text></g>
+      <g class="c-purple"><rect x="180" y="120" width="110" height="50" rx="8"/><text class="th" x="235" y="140" text-anchor="middle">Load Balancer</text></g>
+      <g class="c-blue"><rect x="340" y="120" width="120" height="50" rx="8"/><text class="th" x="400" y="140" text-anchor="middle">Banking API</text><text class="ts" x="400" y="158" text-anchor="middle">ACID TX</text></g>
+      <g class="c-teal"><rect x="510" y="50" width="120" height="50" rx="8"/><text class="th" x="570" y="70" text-anchor="middle">Primary DB</text></g>
+      <g class="c-teal"><rect x="510" y="210" width="120" height="50" rx="8"/><text class="th" x="570" y="230" text-anchor="middle">Replica DB</text><text class="ts" x="570" y="248" text-anchor="middle">Sync replication</text></g>
+      <line x1="130" y1="145" x2="178" y2="145" stroke="var(--muted)" marker-end="url(#arr3)"/>
+      <line x1="290" y1="145" x2="338" y2="145" stroke="var(--muted)" marker-end="url(#arr3)"/>
+      <line x1="460" y1="135" x2="508" y2="90" stroke="var(--muted)" marker-end="url(#arr3)"/>
+      <line x1="570" y1="100" x2="570" y2="208" stroke="var(--green)" stroke-width="2" marker-end="url(#arr3)"/>
+      <text class="ts" x="585" y="160" fill="var(--green)">SYNC</text>
+      <defs><marker id="arr3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="var(--muted)" stroke-width="1.5"/></marker></defs>
+    </svg>
+  </div>
+  <div class="panel" id="banking-flow">
+    <svg class="diagram" viewBox="0 0 680 180" role="img"><title>Bank transfer flow</title>
+      <g class="c-blue"><rect x="15" y="60" width="85" height="48" rx="8"/><text class="th" x="57" y="80" text-anchor="middle">BEGIN</text><text class="ts" x="57" y="96" text-anchor="middle">Lock</text></g>
+      <g class="c-red"><rect x="115" y="60" width="85" height="48" rx="8"/><text class="th" x="157" y="80" text-anchor="middle">DEBIT A</text></g>
+      <g class="c-green"><rect x="215" y="60" width="85" height="48" rx="8"/><text class="th" x="257" y="80" text-anchor="middle">CREDIT B</text></g>
+      <g class="c-purple"><rect x="315" y="60" width="85" height="48" rx="8"/><text class="th" x="357" y="80" text-anchor="middle">VALIDATE</text></g>
+      <g class="c-teal"><rect x="415" y="60" width="85" height="48" rx="8"/><text class="th" x="457" y="80" text-anchor="middle">COMMIT</text></g>
+      <g class="c-gray"><rect x="515" y="60" width="85" height="48" rx="8"/><text class="th" x="557" y="80" text-anchor="middle">CONFIRM</text></g>
+      <path d="M357 108 Q357 155 257 155 Q157 155 157 108" fill="none" stroke="var(--red)" stroke-dasharray="5 4" marker-end="url(#arr3)"/>
+      <text class="ts" x="257" y="172" text-anchor="middle" fill="var(--red)">ROLLBACK if any step fails</text>
+    </svg>
+  </div>
+  <div class="panel" id="banking-partition">
+    <svg class="diagram" viewBox="0 0 680 200" role="img"><title>Bank during partition</title>
+      <g class="c-blue"><rect x="50" y="80" width="150" height="65" rx="10"/><text class="th" x="125" y="105" text-anchor="middle">Mumbai DC</text><text class="ts" x="125" y="125" text-anchor="middle">Primary — online</text></g>
+      <path d="M240 112 L280 95 L310 130 L340 95 L370 130 L400 112" fill="none" stroke="var(--red)" stroke-width="2.5"/>
+      <text class="ts" x="320" y="155" text-anchor="middle" fill="var(--red)">Network partition</text>
+      <g class="c-red"><rect x="430" y="80" width="170" height="65" rx="10"/><text class="th" x="515" y="105" text-anchor="middle">Delhi Replica</text><text class="ts" x="515" y="125" text-anchor="middle">LOCKED — no writes</text></g>
+      <rect x="170" y="20" width="340" height="30" rx="8" fill="var(--red-bg)" stroke="var(--red-border)"/>
+      <text class="ts" x="340" y="38" text-anchor="middle" fill="var(--red)">Service temporarily unavailable — CP choice</text>
+    </svg>
+  </div>
+  <div class="card" style="margin-top:1rem;"><div style="font-weight:600;margin-bottom:.4rem;">Tech stack</div><div style="display:flex;gap:.4rem;flex-wrap:wrap;"><span class="badge badge-cp">PostgreSQL</span><span class="badge badge-cp">Oracle</span><span class="badge badge-cp">2PC</span><span class="badge badge-cp">Zookeeper</span></div></div>
+</section>
+
+<!-- ═══ AMAZON ═══ -->
+<section class="section" id="sec-amazon">
+  <div class="sec-title">Amazon Cart — AP (Availability + Partition Tolerance)</div>
+  <div class="sec-sub">Amazon chose availability. A cart that's always addable beats one that's offline. Eventual consistency + vector clocks reconcile conflicts.</div>
+  <div class="tabs">
+    <button class="tab active" data-sys="amazon" data-panel="arch">Architecture</button>
+    <button class="tab" data-sys="amazon" data-panel="flow">Add to cart</button>
+    <button class="tab" data-sys="amazon" data-panel="reconcile">Conflict resolution</button>
+  </div>
+  <div class="panel active" id="amazon-arch">
+    <svg class="diagram diagram-lg" viewBox="0 0 680 280" role="img"><title>Amazon AP architecture</title>
+      <g class="c-green"><rect x="30" y="100" width="130" height="60" rx="10"/><text class="th" x="95" y="125" text-anchor="middle">US-East</text></g>
+      <g class="c-green"><rect x="275" y="30" width="130" height="60" rx="10"/><text class="th" x="340" y="55" text-anchor="middle">EU-West</text></g>
+      <g class="c-green"><rect x="520" y="100" width="130" height="60" rx="10"/><text class="th" x="585" y="125" text-anchor="middle">AP-South</text></g>
+      <line x1="160" y1="120" x2="273" y2="75" stroke="var(--green)" stroke-dasharray="6 4" marker-end="url(#arr4)"/>
+      <line x1="405" y1="75" x2="518" y2="120" stroke="var(--green)" stroke-dasharray="6 4" marker-end="url(#arr4)"/>
+      <line x1="160" y1="145" x2="518" y2="145" stroke="var(--green)" stroke-dasharray="6 4" marker-end="url(#arr4)"/>
+      <defs><marker id="arr4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="var(--green)" stroke-width="1.5"/></marker></defs>
+      <text class="ts" x="340" y="175" text-anchor="middle" fill="var(--green)">async replication (eventual consistency)</text>
+      <g class="c-amber"><rect x="30" y="210" width="130" height="45" rx="8"/><text class="ts" x="95" y="235" text-anchor="middle">Cart: iPhone, Shoes</text></g>
+      <g class="c-amber"><rect x="275" y="210" width="130" height="45" rx="8"/><text class="ts" x="340" y="235" text-anchor="middle">Cart: iPhone, Laptop</text></g>
+      <g class="c-amber"><rect x="520" y="210" width="130" height="45" rx="8"/><text class="ts" x="585" y="235" text-anchor="middle">Merged cart</text></g>
+    </svg>
+  </div>
+  <div class="panel" id="amazon-flow">
+    <svg class="diagram" viewBox="0 0 680 160" role="img"><title>Add to cart flow</title>
+      <g class="c-gray"><rect x="20" y="55" width="95" height="48" rx="8"/><text class="th" x="67" y="78" text-anchor="middle">User clicks</text></g>
+      <g class="c-green"><rect x="135" y="55" width="105" height="48" rx="8"/><text class="th" x="187" y="75" text-anchor="middle">Local write</text><text class="ts" x="187" y="92" text-anchor="middle">Immediate OK</text></g>
+      <g class="c-green"><rect x="260" y="55" width="105" height="48" rx="8"/><text class="th" x="312" y="78" text-anchor="middle">Return 200</text></g>
+      <g class="c-teal"><rect x="385" y="55" width="115" height="48" rx="8"/><text class="th" x="442" y="78" text-anchor="middle">Async replicate</text></g>
+      <g class="c-purple"><rect x="520" y="55" width="115" height="48" rx="8"/><text class="th" x="577" y="78" text-anchor="middle">Reconcile</text></g>
+      <rect x="100" y="125" width="480" height="28" rx="8" fill="var(--green-bg)" stroke="var(--green-border)"/>
+      <text class="ts" x="340" y="142" text-anchor="middle" fill="var(--green)">Never say no to adding items — always available</text>
+    </svg>
+  </div>
+  <div class="panel" id="amazon-reconcile">
+    <svg class="diagram" viewBox="0 0 680 240" role="img"><title>Vector clock merge</title>
+      <g class="c-amber"><rect x="50" y="40" width="170" height="80" rx="10"/><text class="th" x="135" y="65" text-anchor="middle">Cart US-East</text><text class="ts" x="135" y="85" text-anchor="middle">iPhone, Air Fryer</text><text class="ts" x="135" y="105" text-anchor="middle">v[A:2,B:1]</text></g>
+      <g class="c-amber"><rect x="460" y="40" width="170" height="80" rx="10"/><text class="th" x="545" y="65" text-anchor="middle">Cart EU-West</text><text class="ts" x="545" y="85" text-anchor="middle">iPhone, Shoes</text><text class="ts" x="545" y="105" text-anchor="middle">v[A:1,B:2]</text></g>
+      <line x1="220" y1="110" x2="330" y2="175" stroke="var(--muted)" marker-end="url(#arr4)"/>
+      <line x1="460" y1="110" x2="350" y2="175" stroke="var(--muted)" marker-end="url(#arr4)"/>
+      <g class="c-green"><rect x="245" y="175" width="190" height="55" rx="10"/><text class="th" x="340" y="198" text-anchor="middle">Merged: iPhone, Air Fryer, Shoes</text></g>
+    </svg>
+  </div>
+  <div class="card" style="margin-top:1rem;"><div style="font-weight:600;margin-bottom:.4rem;">Tech stack</div><div style="display:flex;gap:.4rem;flex-wrap:wrap;"><span class="badge badge-ap">DynamoDB</span><span class="badge badge-ap">Cassandra</span><span class="badge badge-ap">Vector Clocks</span></div></div>
+</section>
+
+<!-- ═══ IRCTC ═══ -->
+<section class="section" id="sec-irctc">
+  <div class="sec-title">IRCTC — Hybrid (CP for seats, AP for browsing)</div>
+  <div class="sec-sub">Strict CP for seat allocation (no double booking), AP for timetable browsing. Common in high-traffic booking systems.</div>
+  <div class="tabs">
+    <button class="tab active" data-sys="irctc" data-panel="arch">Architecture</button>
+    <button class="tab" data-sys="irctc" data-panel="booking">Booking flow</button>
+  </div>
+  <div class="panel active" id="irctc-arch">
+    <svg class="diagram diagram-lg" viewBox="0 0 680 320" role="img"><title>IRCTC hybrid architecture</title>
+      <g class="c-gray"><rect x="285" y="10" width="110" height="45" rx="8"/><text class="th" x="340" y="35" text-anchor="middle">Users</text></g>
+      <rect x="50" y="75" width="580" height="85" rx="12" fill="var(--green-bg)" stroke="var(--green-border)"/>
+      <text class="ts" x="58" y="92" fill="var(--green)" font-weight="600">AP Layer — always available, stale OK</text>
+      <g class="c-green"><rect x="90" y="100" width="130" height="45" rx="8"/><text class="th" x="155" y="122" text-anchor="middle">Train search</text><text class="ts" x="155" y="138" text-anchor="middle">Redis cache</text></g>
+      <g class="c-green"><rect x="260" y="100" width="130" height="45" rx="8"/><text class="th" x="325" y="122" text-anchor="middle">PNR status</text></g>
+      <g class="c-green"><rect x="430" y="100" width="130" height="45" rx="8"/><text class="th" x="495" y="122" text-anchor="middle">Seat display</text><text class="ts" x="495" y="138" text-anchor="middle">Approx count</text></g>
+      <rect x="50" y="195" width="580" height="85" rx="12" fill="var(--blue-bg)" stroke="var(--blue-border)"/>
+      <text class="ts" x="58" y="212" fill="var(--blue)" font-weight="600">CP Layer — strict consistency, ACID</text>
+      <g class="c-blue"><rect x="90" y="220" width="130" height="45" rx="8"/><text class="th" x="155" y="242" text-anchor="middle">Seat allocation</text><text class="ts" x="155" y="258" text-anchor="middle">Row lock</text></g>
+      <g class="c-blue"><rect x="260" y="220" width="130" height="45" rx="8"/><text class="th" x="325" y="242" text-anchor="middle">Payment</text><text class="ts" x="325" y="258" text-anchor="middle">2PC + ACID</text></g>
+      <g class="c-blue"><rect x="430" y="220" width="130" height="45" rx="8"/><text class="th" x="495" y="242" text-anchor="middle">Ticket issue</text><text class="ts" x="495" y="258" text-anchor="middle">Unique PNR</text></g>
+      <line x1="340" y1="55" x2="340" y2="73" stroke="var(--muted)" marker-end="url(#arr5)"/>
+      <line x1="340" y1="160" x2="340" y2="193" stroke="var(--muted)" marker-end="url(#arr5)"/>
+      <defs><marker id="arr5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="var(--muted)" stroke-width="1.5"/></marker></defs>
+    </svg>
+  </div>
+  <div class="panel" id="irctc-booking">
+    <svg class="diagram" viewBox="0 0 680 170" role="img"><title>IRCTC booking flow</title>
+      <g class="c-gray"><rect x="10" y="55" width="80" height="48" rx="8"/><text class="th" x="50" y="78" text-anchor="middle">Search</text><text class="ts" x="50" y="94" text-anchor="middle">AP cache</text></g>
+      <g class="c-amber"><rect x="105" y="55" width="85" height="48" rx="8"/><text class="th" x="147" y="78" text-anchor="middle">Select seat</text></g>
+      <g class="c-blue"><rect x="205" y="55" width="85" height="48" rx="8"/><text class="th" x="247" y="78" text-anchor="middle">LOCK seat</text></g>
+      <g class="c-red"><rect x="305" y="55" width="85" height="48" rx="8"/><text class="th" x="347" y="78" text-anchor="middle">Payment</text></g>
+      <g class="c-teal"><rect x="405" y="55" width="85" height="48" rx="8"/><text class="th" x="447" y="78" text-anchor="middle">Commit</text></g>
+      <g class="c-green"><rect x="505" y="55" width="100" height="48" rx="8"/><text class="th" x="555" y="78" text-anchor="middle">Issue PNR</text></g>
+      <rect x="150" y="130" width="380" height="28" rx="8" fill="var(--amber-bg)" stroke="var(--amber-border)"/>
+      <text class="ts" x="340" y="148" text-anchor="middle" fill="var(--amber)">No seats available preferred over double booking</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ═══ PARTITION SIMULATOR ═══ -->
+<section class="section" id="sec-partsim">
+  <div class="sec-title">Live Partition Simulator</div>
+  <div class="sec-sub">Simulate a network partition and observe CP vs AP behavior in real time.</div>
+  <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.75rem;">
+    <span style="font-weight:600;">System:</span>
+    <button class="sim-btn ok" id="btn-cp" data-pmode="cp">CP (Banking)</button>
+    <button class="sim-btn" id="btn-ap" data-pmode="ap">AP (Amazon)</button>
+  </div>
+  <div id="pmode-label" style="font-size:var(--fs-base);color:var(--muted);margin-bottom:1rem;">Mode: <strong style="color:var(--blue)">CP — blocks writes during partition</strong></div>
+  <div class="demo-grid">
+    <div class="node-box healthy" id="node-a"><div class="node-title">Node A (Primary)</div><div class="node-val" id="pval-a">₹10,000</div><div class="node-status" id="pstat-a">Online — in sync</div></div>
+    <div class="node-box healthy" id="node-b"><div class="node-title">Node B (Replica)</div><div class="node-val" id="pval-b">₹10,000</div><div class="node-status" id="pstat-b">Online — in sync</div></div>
+  </div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin:1rem 0;">
+    <button class="sim-btn danger" id="triggerPart">Trigger partition</button>
+    <button class="sim-btn" id="writeData">Write (₹5,000 transfer)</button>
+    <button class="sim-btn ok" id="healPart">Heal partition</button>
+  </div>
+  <div class="logbox" id="plg"><div class="lok">[ready] Both nodes healthy.</div></div>
+</section>
+
+<!-- ═══ MATRIX ═══ -->
+<section class="section" id="sec-matrix">
+  <div class="sec-title">Complete Reference Matrix</div>
+  <div class="sec-sub">CAP decision guide + database classification for interviews and architecture decisions.</div>
+  <div class="sec-title" style="font-size:var(--fs-xl);margin-top:1rem;">System Design — CAP Choices</div>
+  <div class="card" style="overflow-x:auto;margin-bottom:1.25rem;">
+    <table class="tbl"><thead><tr><th>System</th><th>CAP</th><th>Consistent</th><th>Available</th><th>Why?</th><th>Database</th></tr></thead>
+    <tbody>
+      <tr><td style="font-weight:600">Banking / Payments</td><td><span class="badge badge-cp">CP</span></td><td class="yes">✓</td><td class="no">✗</td><td class="muted">No double spend</td><td class="muted">PostgreSQL, Oracle</td></tr>
+      <tr><td style="font-weight:600">Amazon Cart</td><td><span class="badge badge-ap">AP</span></td><td class="no">✗</td><td class="yes">✓</td><td class="muted">Always addable</td><td class="muted">DynamoDB, Cassandra</td></tr>
+      <tr><td style="font-weight:600">IRCTC Booking</td><td><span class="badge badge-cp">CP</span></td><td class="yes">✓</td><td style="color:var(--amber)">~</td><td class="muted">No double booking</td><td class="muted">PostgreSQL + Redis</td></tr>
+      <tr><td style="font-weight:600">Social feed</td><td><span class="badge badge-ap">AP</span></td><td class="no">✗</td><td class="yes">✓</td><td class="muted">Stale feed OK</td><td class="muted">Cassandra, DynamoDB</td></tr>
+      <tr><td style="font-weight:600">Inventory</td><td><span class="badge badge-cp">CP</span></td><td class="yes">✓</td><td class="no">✗</td><td class="muted">No oversell</td><td class="muted">MySQL, PostgreSQL</td></tr>
+      <tr><td style="font-weight:600">Leader election</td><td><span class="badge badge-cp">CP</span></td><td class="yes">✓</td><td class="no">✗</td><td class="muted">One leader only</td><td class="muted">etcd, Zookeeper</td></tr>
+    </tbody></table>
+  </div>
+  <div class="sec-title" style="font-size:var(--fs-xl);">Database — ACID + BASE + CAP</div>
+  <div class="card" style="overflow-x:auto;">
+    <table class="tbl"><thead><tr><th>Database</th><th>Model</th><th>CAP</th><th>Guarantee</th><th>Transactions</th><th>Best for</th></tr></thead>
+    <tbody>
+      <tr><td style="font-weight:600">PostgreSQL</td><td class="muted">Relational</td><td><span class="badge badge-cp">CP</span></td><td><span class="badge badge-acid">Full ACID</span></td><td class="yes">Full + Savepoints</td><td class="muted">Finance, ERP</td></tr>
+      <tr><td style="font-weight:600">MySQL InnoDB</td><td class="muted">Relational</td><td><span class="badge badge-cp">CP</span></td><td><span class="badge badge-acid">Full ACID</span></td><td class="yes">Full</td><td class="muted">E-commerce</td></tr>
+      <tr><td style="font-weight:600">Oracle DB</td><td class="muted">Relational</td><td><span class="badge badge-cp">CP</span></td><td><span class="badge badge-acid">Full ACID</span></td><td class="yes">Full + XA</td><td class="muted">Enterprise banking</td></tr>
+      <tr><td style="font-weight:600">Cassandra</td><td class="muted">Wide-column</td><td><span class="badge badge-ap">AP</span></td><td><span class="badge badge-base">BASE</span></td><td style="color:var(--amber)">Lightweight TX</td><td class="muted">IoT, time-series</td></tr>
+      <tr><td style="font-weight:600">DynamoDB</td><td class="muted">Key-value</td><td><span class="badge badge-ap">AP</span></td><td><span class="badge badge-base">BASE</span></td><td style="color:var(--amber)">Optional TX</td><td class="muted">Cart, sessions</td></tr>
+      <tr><td style="font-weight:600">MongoDB</td><td class="muted">Document</td><td><span class="badge badge-cp">CP</span></td><td style="color:var(--amber)">Partial ACID</td><td style="color:var(--amber)">Multi-doc TX</td><td class="muted">Content, catalogs</td></tr>
+      <tr><td style="font-weight:600">CockroachDB</td><td class="muted">NewSQL</td><td><span class="badge badge-cp">CP</span></td><td><span class="badge badge-acid">Full ACID</span></td><td class="yes">Distributed ACID</td><td class="muted">Global fintech</td></tr>
+      <tr><td style="font-weight:600">Redis</td><td class="muted">Key-value</td><td><span class="badge badge-ap">AP</span></td><td><span class="badge badge-base">BASE</span></td><td style="color:var(--amber)">MULTI/EXEC</td><td class="muted">Cache, leaderboards</td></tr>
+      <tr><td style="font-weight:600">Google Spanner</td><td class="muted">NewSQL</td><td><span class="badge badge-cp">CP</span></td><td><span class="badge badge-acid">Full ACID</span></td><td class="yes">Global distributed</td><td class="muted">Global payments</td></tr>
+    </tbody></table>
+  </div>
+  <div class="highlight" style="margin-top:1rem;"><strong>Interview shortcut:</strong> Banking → CP + Full ACID + Serializable + PostgreSQL. Social feed → AP + BASE + Cassandra. Ticket booking → CP + Serializable + row lock + PostgreSQL. CA systems only exist on single nodes — partition tolerance is not optional.</div>
+</section>
+
+</div>
+<script>
+(function(){
+  // Main navigation
+  document.querySelectorAll('.nav-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('sec-'+btn.dataset.sec).classList.add('active');
+    });
+  });
+
+  // Sub-tabs (isolation)
+  document.querySelectorAll('.stb').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const grp=btn.dataset.grp, panel=btn.dataset.panel;
+      document.querySelectorAll('#sec-'+grp+' .stb').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('#sec-'+grp+' .spnl').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(grp+'-'+panel).classList.add('active');
+    });
+  });
+
+  // Scenario tabs (banking, amazon, irctc)
+  document.querySelectorAll('.tab').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const sys=btn.dataset.sys, panel=btn.dataset.panel;
+      const sec=document.getElementById('sec-'+sys);
+      sec.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      sec.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(sys+'-'+panel).classList.add('active');
+    });
+  });
+
+  // Keyboard navigation (arrow keys)
+  const navBtns=[...document.querySelectorAll('.nav-btn')];
+  document.addEventListener('keydown',e=>{
+    const i=navBtns.findIndex(b=>b.classList.contains('active'));
+    if(e.key==='ArrowRight'&&i<navBtns.length-1){navBtns[i+1].click();}
+    if(e.key==='ArrowLeft'&&i>0){navBtns[i-1].click();}
+  });
+
+  // ── Transaction Simulator (ACID vs BASE) ──
+  let txMode='acid', a=10000, b=5000;
+  const sv=(id,v)=>document.getElementById(id).textContent=v;
+  const sc=(id,c)=>document.getElementById(id).className='snode'+(c?' '+c:'');
+  const addLog=(t,m)=>{
+    const l=document.getElementById('lg'),d=document.createElement('div');
+    d.className=t==='ok'?'lok':t==='err'?'lerr':t==='info'?'lnfo':'lwrn';
+    d.textContent=m;l.appendChild(d);l.scrollTop=l.scrollHeight;
+  };
+
+  function setTxMode(m){
+    txMode=m;
+    const ab=document.getElementById('btn-acid'),bb=document.getElementById('btn-base');
+    ab.className='sim-btn'+(m==='acid'?' ok':'');
+    bb.className='sim-btn'+(m==='base'?' ok':'');
+    document.getElementById('mlbl').innerHTML='Mode: <strong style="color:'+(m==='acid'?'var(--green)':'var(--red)')+'">'+(m==='acid'?'ACID — full rollback on crash':'BASE — no rollback, eventual sync')+'</strong>';
+    resetTx(true);
+    addLog('info','[mode] Switched to '+m.toUpperCase());
+  }
+
+  function resetTx(silent){
+    a=10000;b=5000;
+    sv('va','₹10,000');sv('vb','₹5,000');sv('vl','OK');sv('sl','Sum = ₹15,000');sv('sa','Ready');sv('sb','Ready');
+    ['na','nb','nl'].forEach(n=>sc(n,''));
+    if(!silent)addLog('info','[reset] A=₹10,000, B=₹5,000.');
+  }
+
+  document.getElementById('btn-acid').addEventListener('click',()=>setTxMode('acid'));
+  document.getElementById('btn-base').addEventListener('click',()=>setTxMode('base'));
+  document.getElementById('doReset').addEventListener('click',()=>resetTx(false));
+  document.getElementById('doTx').addEventListener('click',()=>{
+    addLog('ok','[begin] '+(txMode==='acid'?'BEGIN TRANSACTION':'Write request sent'));
+    setTimeout(()=>{
+      if(txMode==='acid'){
+        a-=2000;b+=2000;
+        sv('va','₹'+a.toLocaleString());sv('vb','₹'+b.toLocaleString());
+        sc('na','ok');sc('nb','ok');
+        sv('vl','OK');sv('sl','Sum = ₹'+(a+b).toLocaleString());
+        addLog('ok','[debit] A→₹'+a.toLocaleString()+'  [credit] B→₹'+b.toLocaleString());
+        addLog('ok','[COMMIT] fsync complete. Sum unchanged = ₹'+(a+b).toLocaleString());
+      }else{
+        a-=2000;sv('va','₹'+a.toLocaleString());sc('na','ok');
+        addLog('ok','[write] Node A local write OK');
+        addLog('info','[async] Replicating to Node B...');
+        setTimeout(()=>{
+          b+=2000;sv('vb','₹'+b.toLocaleString());sc('nb','ok');
+          sv('vl','Synced');sv('sl','Sum = ₹'+(a+b).toLocaleString());
+          addLog('ok','[sync] Node B synced. Converged.');
+        },1400);
+      }
+    },500);
+  });
+  document.getElementById('doCrash').addEventListener('click',()=>{
+    addLog('ok','[begin] '+(txMode==='acid'?'BEGIN TRANSACTION':'Write request sent'));
+    setTimeout(()=>{
+      a-=2000;sv('va','₹'+a.toLocaleString());sc('na','dirty');sv('sa','Dirty — uncommitted');
+      addLog('info','[debit] A debited ₹2,000 (dirty state)');
+      setTimeout(()=>{
+        addLog('err','[CRASH] Server crashed before crediting B!');
+        if(txMode==='acid'){
+          setTimeout(()=>{
+            a+=2000;sv('va','₹'+a.toLocaleString());sc('na','');sv('sa','Restored');
+            sv('vl','OK');sv('sl','Sum = ₹'+(a+b).toLocaleString()+' (unchanged)');
+            addLog('ok','[ROLLBACK] WAL undo applied. ACID held — zero data lost.');
+          },900);
+        }else{
+          sc('nl','bad');sv('vl','DIVERGED');sv('sl','A=₹'+a.toLocaleString()+' B=₹'+b.toLocaleString());
+          addLog('err','[BASE] No rollback! A lost ₹2,000. Manual reconciliation needed.');
+          addLog('info','[BASE] Never use BASE for financial transactions.');
+        }
+      },700);
+    },500);
+  });
+
+  // ── Partition Simulator (CP vs AP) ──
+  let pMode='cp', partitioned=false, pA=10000, pB=10000;
+  const plog=(t,m)=>{
+    const l=document.getElementById('plg'),d=document.createElement('div');
+    d.className=t==='ok'?'lok':t==='err'?'lerr':'lwrn';
+    d.textContent=m;l.appendChild(d);l.scrollTop=l.scrollHeight;
+  };
+
+  function setPMode(m){
+    pMode=m;
+    document.getElementById('btn-cp').className='sim-btn'+(m==='cp'?' ok':'');
+    document.getElementById('btn-ap').className='sim-btn'+(m==='ap'?' ok':'');
+    document.getElementById('pmode-label').innerHTML='Mode: <strong style="color:var(--blue)">'+(m==='cp'?'CP — blocks writes during partition':'AP — accepts writes, may diverge')+'</strong>';
+    plog('info','[mode] Switched to '+m.toUpperCase());
+  }
+
+  document.getElementById('btn-cp').addEventListener('click',()=>setPMode('cp'));
+  document.getElementById('btn-ap').addEventListener('click',()=>setPMode('ap'));
+  document.getElementById('triggerPart').addEventListener('click',()=>{
+    if(partitioned)return;
+    partitioned=true;
+    document.getElementById('node-b').className='node-box partitioned';
+    document.getElementById('pstat-b').textContent='Partitioned — unreachable';
+    plog('err','[partition] Network partition! Node B unreachable.');
+  });
+  document.getElementById('writeData').addEventListener('click',()=>{
+    if(!partitioned){
+      pA-=5000;pB-=5000;
+      document.getElementById('pval-a').textContent='₹'+pA.toLocaleString();
+      document.getElementById('pval-b').textContent='₹'+pB.toLocaleString();
+      plog('ok','[write] ₹5,000 transfer committed. Both nodes updated.');
+      return;
+    }
+    if(pMode==='cp'){
+      plog('err','[CP] Write BLOCKED — cannot confirm replica. Consistency maintained.');
+      document.getElementById('node-a').className='node-box stale';
+      document.getElementById('pstat-a').textContent='Write refused — no quorum';
+      setTimeout(()=>{
+        document.getElementById('node-a').className='node-box healthy';
+        document.getElementById('pstat-a').textContent='Online — awaiting heal';
+      },2000);
+    }else{
+      pA-=5000;
+      document.getElementById('pval-a').textContent='₹'+pA.toLocaleString();
+      document.getElementById('node-a').className='node-box stale';
+      document.getElementById('pstat-a').textContent='Write accepted locally';
+      plog('warn','[AP] Node A updated. Node B still ₹'+pB.toLocaleString()+'. Diverged — reconcile on heal.');
+    }
+  });
+  document.getElementById('healPart').addEventListener('click',()=>{
+    if(!partitioned)return;
+    partitioned=false;pB=pA;
+    document.getElementById('node-a').className='node-box healthy';
+    document.getElementById('node-b').className='node-box healthy';
+    document.getElementById('pval-b').textContent='₹'+pB.toLocaleString();
+    document.getElementById('pstat-a').textContent='Online — in sync';
+    document.getElementById('pstat-b').textContent='Healed — synced';
+    plog('ok','[heal] Partition healed. Both nodes: ₹'+pA.toLocaleString());
+  });
+})();
+</script>
+</body>
+</html>

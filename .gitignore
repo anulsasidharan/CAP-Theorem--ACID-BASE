@@ -1,0 +1,22 @@
+# Large media — keep locally, exclude from repo
+*.mkv
+*.mp4
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.tiff
+*.ico
+*.webp
+*.svg
+*.eps
+
+# Documents
+*.pdf
+*.docx
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
